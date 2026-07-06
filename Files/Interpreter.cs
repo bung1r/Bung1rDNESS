@@ -11,6 +11,62 @@ public class Interpreter
         this.nodes = nodes;
     }
 
+    private int EvalOperation(BinaryExpression be)
+    {
+        if (be.operation == TokenType.ADD || be.operation == TokenType.SUB || 
+        be.operation == TokenType.MUL || be.operation == TokenType.DIV)
+        {
+            object left = be.left;
+            if (be.left is BinaryExpression l)
+            {
+                left = EvalOperation(l);
+            } else if (left is NumLiteral num)
+            {
+                left = num.value;
+            } else if (left is BiLiteral bi)
+            {
+                left = bi.value;
+            } else if (left is HexLiteral hex)
+            {
+                left = hex.value;
+            }
+
+
+            object right = be.right;
+            if (be.right is BinaryExpression r)
+            {
+                right = EvalOperation(r);
+            } else if (right is NumLiteral num)
+            {
+                right = num.value;
+            } else if (right is BiLiteral bi)
+            {
+                right = bi.value;
+            } else if (right is HexLiteral hex)
+            {
+                right = hex.value;
+            } 
+            
+
+            switch(be.operation)
+            {
+                case TokenType.ADD:
+                    return (int)left + (int)right;
+                case TokenType.SUB:
+                    return (int)left - (int)right;
+                case TokenType.MUL:
+                    return (int)left * (int)right;
+                case TokenType.DIV:
+                    return (int)left / (int)right;
+
+            }
+            throw new Exception("In some way, you managed to get past all the operations. Congrats.");
+        } else
+        {
+            throw new Exception($"Please don't process {be.operation} operation with the Evaluate function! Thanks!");
+        }
+    }
+
     public object Evaluate(Expression expr)
     {
         if (expr is StringLiteral s)
@@ -88,13 +144,28 @@ public class Interpreter
                         object left = c.left;
                         if (c.left is BinaryExpression l)
                         {
-                            left = EvalCondition(l);
+                            if (l.operation == TokenType.ADD || l.operation == TokenType.SUB || 
+                            l.operation == TokenType.MUL || l.operation == TokenType.DIV)
+                            {
+                                left = EvalOperation(l);
+                            } else
+                            {
+                                left = EvalCondition(l);
+                            }
                         }
 
                         object right = c.right;
                         if (c.right is BinaryExpression r)
                         {
-                            right = EvalCondition(r);
+                            if (r.operation == TokenType.ADD || r.operation == TokenType.SUB || 
+                            r.operation == TokenType.MUL || r.operation == TokenType.DIV)
+                            {
+                                right = EvalOperation(r);
+                            } else
+                            {
+                                left = EvalCondition(r);
+                            }
+                            
                         } 
 
                         if (c.operation == TokenType.GE || c.operation == TokenType.GT || c.operation == TokenType.LE || c.operation == TokenType.LT)
@@ -102,11 +173,11 @@ public class Interpreter
                             if (left.GetType() == typeof(bool) || right.GetType() == typeof(bool)) 
                                     throw new Exception("It's a comparison expression, tf you doin with booleans! GET OUTTA HERE!");
 
-                            if (left.GetType() != typeof(NumLiteral) && left.GetType() != typeof(HexLiteral) && left.GetType() != typeof(BiLiteral))
-                                throw new Exception("Invalid type to use comparison on");
+                            if (left is not NumLiteral && left is not HexLiteral && left is not BiLiteral)
+                                throw new Exception($"Invalid type to use comparison on: {left.GetType()}");
 
-                            if (right.GetType() != typeof(NumLiteral) && right.GetType() != typeof(HexLiteral) && right.GetType() != typeof(BiLiteral))
-                                throw new Exception("Invalid type to use comparison on");
+                            if (right is not NumLiteral && right is not HexLiteral && right is not BiLiteral)
+                                throw new Exception($"Invalid type to use comparison on: {right.GetType()}");
                                 
                             int leftVal = 0;
                             if (left is Expression e)
@@ -133,13 +204,13 @@ public class Interpreter
                             }
                         } else
                         {   
-                            dynamic leftVal = 0;
+                            dynamic leftVal = left;
                             if (left is Expression e)
                             {
                                 leftVal = Evaluate(e);
                             }
 
-                            dynamic rightVal = 0;
+                            dynamic rightVal = right;
                             if (right is Expression f)
                             {
                                 rightVal = Evaluate(f);
@@ -165,7 +236,7 @@ public class Interpreter
                         return b.value;
                     } else // also allow functions that return 
                     {
-                        throw new Exception("Something about not being a boolean value idk man");
+                        throw new Exception("Condition does not evaluate to a boolean");
                     }
                 }
             }

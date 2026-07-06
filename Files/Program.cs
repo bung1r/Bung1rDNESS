@@ -48,7 +48,9 @@
             
             load("nestest.nes")
 
-            
+            if ((2 + 2 * 2) == (6)) {
+                print("Yes, 2+2 IS equal to 4! You're so intelligent!")
+            }           
 
            
 
@@ -60,7 +62,7 @@
         
         tokenList = lexer.ScanTokens();
 
-        // DisplayLexer(tokenList);
+        DisplayLexer(tokenList);
 
         Parser parser = new Parser(tokenList);
         astNodes = parser.ParseTokens();

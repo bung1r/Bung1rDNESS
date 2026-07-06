@@ -25,6 +25,15 @@ public class Lexer
                 case "true": case "false": tempToken = TokenType.Bool; break;
             }
         }
+        void ProcessLexeme()
+        {
+            if (tempLexeme.Length > 0)
+            {
+                DetermineTokenType();
+                tokenList.Add(new Token(tempToken, tempLexeme, lineNum));
+                tempLexeme = "";
+            }
+        }
 
 
         bool inString = false;
@@ -232,8 +241,49 @@ public class Lexer
                     }
                     break;
 
-
+                case '+':
+                    if (!inString)
+                    {
+                        ProcessLexeme();
+                        tokenList.Add(new Token(TokenType.ADD, "+", lineNum));
+                    } else
+                    {
+                        ConcatLex(c);
+                    }
+                    break;
                 
+                case '-':
+                    if (!inString)
+                    {
+                        ProcessLexeme();
+                        tokenList.Add(new Token(TokenType.SUB, "-", lineNum));
+                    } else
+                    {
+                        ConcatLex(c);
+                    }
+                    break;
+
+                case '*':
+                    if (!inString)
+                    {
+                        ProcessLexeme();
+                        tokenList.Add(new Token(TokenType.MUL, "*", lineNum));
+                    } else
+                    {
+                        ConcatLex(c);
+                    }
+                    break;
+
+                case '/':
+                    if (!inString)
+                    {
+                        ProcessLexeme();
+                        tokenList.Add(new Token(TokenType.DIV, "/", lineNum));
+                    } else
+                    {
+                        ConcatLex(c);
+                    }
+                    break;
 
                 case '&':
                     if (!inString)
@@ -245,12 +295,7 @@ public class Lexer
                             tempLexeme = "";
                         } else
                         {
-                            if (tempLexeme.Length > 0)
-                            {
-                                DetermineTokenType();
-                                tokenList.Add(new Token(tempToken, tempLexeme, lineNum));
-                                tempLexeme = "";
-                            }
+                            ProcessLexeme();
                             ConcatLex(c);
                         }
                     } else

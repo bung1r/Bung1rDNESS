@@ -119,7 +119,7 @@ public class Parser
 
         Expression ParseComparison()
         {
-            Expression left = ParsePrimary();
+            Expression left = ParseAddition();
 
             while (
                 Current.type == TokenType.EQ || Current.type == TokenType.NEQ ||
@@ -130,6 +130,36 @@ public class Parser
                 TokenType op = Current.type;
                 Advance();
                 Expression right = ParsePrimary();
+
+                left = new BinaryExpression(left, op, right);
+            }
+
+            return left;
+        }
+
+        Expression ParseAddition()
+        {
+            Expression left = ParseMultiplication();
+
+            while (Current.type == TokenType.ADD || Current.type == TokenType.SUB)
+            {
+                var op = Advance().type;
+                var right = ParseMultiplication();
+
+                left = new BinaryExpression(left, op, right);
+            }
+
+            return left;
+        }
+
+        Expression ParseMultiplication()
+        {
+            Expression left = ParsePrimary();
+
+            while (Current.type == TokenType.MUL || Current.type == TokenType.DIV)
+            {
+                var op = Advance().type;
+                var right = ParsePrimary();
 
                 left = new BinaryExpression(left, op, right);
             }
