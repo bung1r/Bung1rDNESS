@@ -46,16 +46,18 @@ public class Parser
     public List<ASTNode> ParseTokens()
     {
         List<ASTNode> nodes = new List<ASTNode>();
-        FunctionCall ParseFunctionCall() // runs when the Current == "Identifier" (for now)
+        ASTNode ParseIdentifier() // runs when the Current == "Identifier" (for now)
         {
             string name = Current.lexeme;
             int lineNum = Current.lineNum;
 
-            List<Expression> args = new List<Expression>();
+            
 
             Advance(); // consume the identifier 
             if (Current.type == TokenType.LeftParen)
             {
+                List<Expression> args = new List<Expression>();
+
                 Advance(); // consume the (
 
                 while (Current.type != TokenType.RightParen)
@@ -71,16 +73,21 @@ public class Parser
                     
                     
                 }
+
                 Advance(); // consume the )
-            } else
-            {
-                throw new Exception($"Trouble parsing function call at line {lineNum}");
+
+                return new FunctionCall(name, args);
+            } else // can't find it? Try to make it a variable at least!
+            {           
+                return new IdentifierExpression(name);
             }
 
             
             
-            return new FunctionCall(name, args);
+            
         }
+
+        
         
         IfStatement ParseIfStatement()
         {
@@ -99,7 +106,26 @@ public class Parser
             List<Statement> body = ParseBody(); // handles { to }
 
             return new IfStatement(condition, body);
-        } 
+        }
+
+        WhileStatement ParseWhileStatement()
+        {
+            Advance(); // consume the if
+
+            if (Current.type != TokenType.LeftParen) 
+                throw new Exception($"'(' expected at line {Current.lineNum}");
+
+            Advance(); // consume the (
+
+            Expression condition = ParseExpression();
+
+            if (Current.type != TokenType.RightParen) 
+                throw new Exception($"')' expected at line {Current.lineNum}");
+
+            List<Statement> body = ParseBody(); // handles { to }
+
+            return new WhileStatement(condition, body);
+        }  
 
         Expression ParseLogical()
         {
@@ -202,9 +228,10 @@ public class Parser
                 case TokenType.Bool:
                     return new BoolLiteral(ParseBool(token.lexeme));
 
-                // You'll add these later:
-                // case TokenType.Identifier:
-                //     return new IdentifierExpression(token.lexeme);
+                case TokenType.Identifier:
+                    return new IdentifierExpression(token.lexeme);
+
+                
 
                 default:
                     throw new Exception(
@@ -216,15 +243,15 @@ public class Parser
         {
             return ParseLogical();
         }
-        List<Statement> ParseBody()
-        {
+        List<Statement> ParseBody() {
+        
             List<Statement> body = new List<Statement>();
 
             Advance();
 
             if (Current.type != TokenType.LeftCurly)
             {
-                char c = '}';
+                char c = '{';
                 throw new Exception($"Expected {c} at line {Current.lineNum}");
             }
             
@@ -249,14 +276,17 @@ public class Parser
 
         ASTNode ParseNode()
         {
-        
+            
             if (Current.type == TokenType.Identifier)
             {
-                return ParseFunctionCall();
+                return ParseIdentifier();
             } else if (Current.type == TokenType.If)
             {
                 return ParseIfStatement();
-            } else
+            } else if (Current.type == TokenType.While)
+            {
+                return ParseWhileStatement();
+            } else 
             {
                 throw new Exception($"Unexpected {Current.type} at line {Current.lineNum}");
             }

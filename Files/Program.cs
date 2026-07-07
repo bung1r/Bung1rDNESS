@@ -43,13 +43,21 @@
             
             """
             if(true) {
-                print("Hello World, although it sounds like bits and bytes...")
+                println("Hello World, although it sounds like bits and bytes...")
             }
             
             load("nestest.nes")
 
-            if ((2 + 2 * 2) == (6)) {
-                print("Yes, 2+2 IS equal to 4! You're so intelligent!")
+            var("x", 0)
+            while (x < 5) {
+                set("x", x + 1)
+                print("X is currently: ")
+                println(x)
+            }
+
+            var("num", 2 + 2 * 2)
+            if (num == (6)) {
+                println(num)
             }           
 
            

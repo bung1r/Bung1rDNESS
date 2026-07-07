@@ -18,6 +18,7 @@ public enum TokenType
 {
     Identifier,
     If, 
+    While,
     GE,
     GT,
     LE,

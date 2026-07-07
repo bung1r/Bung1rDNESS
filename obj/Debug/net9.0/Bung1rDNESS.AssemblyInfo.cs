@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Bung1rDNESS")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5dd062e039e350985ba007bbfece4b1992a564f3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+df1a0f04439a50bfd45c08f6f5a5c1e9395be50c")]
 [assembly: System.Reflection.AssemblyProductAttribute("Bung1rDNESS")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Bung1rDNESS")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

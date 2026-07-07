@@ -14,6 +14,13 @@ emulator as of yet)
 - Goals for next time: Complete mathematical operations (+, -, /, *), and add 
 other statements like while loops
 
+**July 6th 2026** <br>
+- Completed basic mathematical operations (+, -, /, and *) and made it compatable with variables (setting/creating) + if statements 
+- Completed implementation of a while loop
+- Completed system for variable creation and setting. 
+- Modified some function calls
+- Goals for next time: Add simple implementation with Bung1rNESEmulator (ex: cpu.a, cpu.y, cpu.x), as well as working write(), read(), and load()
+
 ### Instruction Set:<br><br>
 
 load [ROM file path]<br>
@@ -44,8 +51,18 @@ wait([ms])<br>
 speed([speed_mult]) <br>
 - Sets the game speed to a certain value <br><br>
 
+var([var_name], [initial_value]) <br>
+- Creates a new variable set to a specific value. <br><br>
 
+set([var_name], [new_value]) <br>
+- Sets a specific variable to a certain value. <br>
+This value does not have to match the initial data type of the variable.<br><br>
 
+print([content]) <br>
+- Prints a line to the terminal without appending a newline character.<br><br>
+
+println([content]) <br>
+- Prints a line to the terminal with appending a newline character.<br><br>
 
 
 

@@ -23,8 +23,10 @@ public class Lexer
             {
                 case "if": tempToken = TokenType.If; break;
                 case "true": case "false": tempToken = TokenType.Bool; break;
+                case "while": tempToken = TokenType.While; break;
             }
         }
+
         void ProcessLexeme()
         {
             if (tempLexeme.Length > 0)
@@ -59,16 +61,10 @@ public class Lexer
                 case '(':
                     if (!inString)
                     {
-                        if (tempLexeme.Length > 0)
-                        {
-                            DetermineTokenType();
-                            tokenList.Add(new Token(tempToken, tempLexeme, lineNum));
-                        }
-                        
+                        ProcessLexeme();
 
                         tokenList.Add(new Token(TokenType.LeftParen, "(", lineNum));
-                        tempLexeme = "";
-                        tempToken = TokenType.Unknown;
+                        tempToken = TokenType.Identifier;
                     } else
                     {
                         ConcatLex(c);
@@ -78,14 +74,9 @@ public class Lexer
                 case ')':
                     if (!inString || prevC == '(')
                     {
-                        if (tempLexeme.Length > 0)
-                        {
-                            DetermineTokenType();
-                            tokenList.Add(new Token(tempToken, tempLexeme, lineNum));
-                        }
+                        ProcessLexeme();
 
                         tokenList.Add(new Token(TokenType.RightParen, ")", lineNum));
-                        tempLexeme = "";
                         tempToken = TokenType.Identifier;
                     } else
                     {
@@ -97,14 +88,9 @@ public class Lexer
                 case ',':
                     if (!inString)
                     {
-                        if (tempLexeme.Length > 0)
-                        {
-                            DetermineTokenType();
-                            tokenList.Add(new Token(tempToken, tempLexeme, lineNum));
-                        }
+                        ProcessLexeme();
                         tokenList.Add(new Token(TokenType.Comma, ",", lineNum));
-                        tempLexeme = "";
-                        tempToken = TokenType.Unknown;
+                        tempToken = TokenType.Identifier;
                     } else
                     {
                         ConcatLex(c);
@@ -162,7 +148,7 @@ public class Lexer
                             // do something when the equal sign is the only thing. 
                             ConcatLex(c);
                         }
-                        tempToken = TokenType.Unknown;
+                        tempToken = TokenType.Identifier;
                     } else
                     {
                         ConcatLex(c);
@@ -291,7 +277,7 @@ public class Lexer
                         if (tempLexeme == "&")
                         {
                             tokenList.Add(new Token(TokenType.AND, "&&", lineNum));
-                            tempToken = TokenType.Unknown;
+                            tempToken = TokenType.Identifier;
                             tempLexeme = "";
                         } else
                         {
@@ -310,7 +296,7 @@ public class Lexer
                         if (tempLexeme == "|")
                         {
                             tokenList.Add(new Token(TokenType.OR, "||", lineNum));
-                            tempToken = TokenType.Unknown;
+                            tempToken = TokenType.Identifier;
                             tempLexeme = "";
                         } else
                         {
@@ -349,7 +335,7 @@ public class Lexer
                         ConcatLex(c);
                         tokenList.Add(new Token(tempToken, tempLexeme, lineNum));
                         tempLexeme = "";
-                        tempToken = TokenType.Unknown;
+                        tempToken = TokenType.Identifier;
                         inString = false;
                         
                     }
