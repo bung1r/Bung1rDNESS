@@ -6,10 +6,68 @@ using System.Xml;
 public class Interpreter
 {
     List<ASTNode> nodes;
+    MainForm form;
+    Bus nes;
+
     Dictionary<string, object> variables = new Dictionary<string, object>();
-    public Interpreter(List<ASTNode> nodes) 
+    Dictionary<string, object> cpuValues = new Dictionary<string, object>();
+    Dictionary<string, object> ppuValues = new Dictionary<string, object>();
+    Dictionary<string, object> apuValues = new Dictionary<string, object>();
+    Dictionary<string, object> formValues = new Dictionary<string, object>();
+    public Interpreter(List<ASTNode> nodes, MainForm form) 
     {
         this.nodes = nodes;
+        this.form = form;
+        nes = form.nes;
+ 
+        cpuValues = new()
+        {
+            ["a"] = Wrap(() => nes.cpu.A),
+            ["x"] = Wrap(() => nes.cpu.X),
+            ["y"] = Wrap(() => nes.cpu.Y),
+            ["pc"] = Wrap(() => nes.cpu.PC),
+            ["sr"] = Wrap(() => nes.cpu.SR),
+            ["sp"] = Wrap(() => nes.cpu.SP),
+            
+
+            ["aset"] = WrapSetter<byte>(value => nes.cpu.A = value),
+            ["xset"] = WrapSetter<byte>(value => nes.cpu.X = value),
+            ["yset"] = WrapSetter<byte>(value => nes.cpu.Y = value),
+            ["pcset"] = WrapSetter<ushort>(value => nes.cpu.PC = value),
+            ["srset"] = WrapSetter<byte>(value => nes.cpu.SR = value),
+            ["spset"] = WrapSetter<byte>(value => nes.cpu.SP = value),
+        };
+
+        ppuValues = new()
+        {
+            
+        };
+
+        apuValues = new()
+        {
+            
+        };
+    }
+    private Func<object> Wrap<T>(Func<T> func)
+    {
+        return () => func();
+    }
+    private Action<object> WrapSetter<T>(Action<T> setter)
+    {
+        return value =>
+        {
+            try
+            {
+                T converted = (T)Convert.ChangeType(value, typeof(T));
+                setter(converted);
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException(
+                    $"Cannot convert {value?.GetType().Name ?? "null"} to {typeof(T).Name}.",
+                    ex);
+            }
+        };
     }
 
     private int EvalOperation(BinaryExpression be)
@@ -33,6 +91,9 @@ public class Interpreter
             } else if (left is IdentifierExpression ex && variables[ex.value].GetType() == typeof(int))
             {
                 left = variables[ex.value];
+            } else if (left is FunctionCall fc)
+            {
+                left = Evaluate(fc);
             }
 
 
@@ -52,6 +113,9 @@ public class Interpreter
             } else if (right is IdentifierExpression ex && variables[ex.value].GetType() == typeof(int))
             {
                 right = variables[ex.value];
+            } else if (right is FunctionCall fc)
+            {
+                right = Evaluate(fc);
             }
             
 
@@ -99,7 +163,51 @@ public class Interpreter
 
         if (expr is IdentifierExpression ex)
         {
-            return variables[ex.value];
+            if (ex.path.Count == 0)
+            {
+                return variables[ex.value];
+            } else
+            {  
+                object? values = null;
+                switch(ex.value)
+                {
+                    case "cpu":
+                    values = cpuValues;
+                    break;
+                    case "ppu":
+                    values = ppuValues;
+                    break;
+                    case "apu":
+                    values = apuValues;
+                    break;
+                    case "form":
+                    values = formValues;
+                    break;
+                }
+                if (nes == null) throw new Exception($"A ROM must be loaded before being able to access {ex.value}");
+                for (int i = 0; i < ex.path.Count; i++)
+                {
+                    if (values is Dictionary<string, object> dict)
+                    {
+                        values = dict[ex.path[i]];
+                    } else
+                    {
+                        throw new Exception($"Path from {ex.value} to {ex.path[ex.path.Count - 1]} is invalid at {ex.path[i]}");
+                    }
+                }
+
+
+                if (values is Func<object> f) 
+                {
+                    return f();
+                } else if (values is Action<object> a)
+                {
+                    return a;
+                } else 
+                {
+                    return new Exception("bruh");
+                }
+            }
         }
 
         if (expr is BinaryExpression be)
@@ -164,14 +272,28 @@ public class Interpreter
             }
         }
 
+        if (expr is FunctionCall fc) // for functions that return a value
+        {
+            switch(fc.name)
+            {
+                case "cpuread":
+                    if (fc.arguments.Count < 1) throw new Exception($"cpuread method requires at least 1 argument");
+                    ushort cpuaddress = Convert.ToUInt16(Evaluate(fc.arguments[0]));
+                    bool cpubRead = false;
+                    if (fc.arguments.Count == 2 && fc.arguments[1] is BoolLiteral) cpubRead = (bool)Evaluate(fc.arguments[1]);
 
+                    return nes.cpuRead(cpuaddress, cpubRead);
+                case "pushort cpuaddress = (ushort)Evaluate(fc.arguments[0]);puread":
+                    if (fc.arguments.Count < 1) throw new Exception($"ppuread method requires 1 arguments, {fc.arguments.Count} were provided.");
+                    ushort ppuaddress = Convert.ToUInt16(Evaluate(fc.arguments[0]));
+                    bool ppubRead = false;
+                    if (fc.arguments.Count == 2 && fc.arguments[1] is BoolLiteral) ppubRead = (bool)Evaluate(fc.arguments[1]);
+                    return nes.ppu.ppuRead(ppuaddress, ppubRead);
+            }
+        }
         return "Evaluation didn't work for this value, check Interpreter";
     }
-    bool IsNumeric(object obj)
-    {   
-        Type type = obj.GetType();
-        return type.IsPrimitive && type != typeof(bool) && type != typeof(char) && type != typeof(IntPtr) && type != typeof(UIntPtr);
-    }
+
     public void ProcessNode(ASTNode node) 
     {
         bool EvalCondition(Expression condition)
@@ -295,6 +417,8 @@ public class Interpreter
         
         if (node is FunctionCall func)
         {
+            ushort address = 0;
+            byte data = 0;
             switch(func.name)
             {
                 case "print":
@@ -304,42 +428,129 @@ public class Interpreter
                     Console.Write($"{Evaluate(func.arguments[0])}\n");
                     break;
                 case "load":
-                    Console.Write($"Attempted to load {Evaluate(func.arguments[0])}\n");
+                    // Console.Write($"Attempted to load {Evaluate(func.arguments[0])}\n");
+                    form.LoadROM((string)Evaluate(func.arguments[0]));
+                    nes = form.nes;
                     break;
-                case "dump":
+                case "dump": 
                     Console.Write($"Attempted to dump to {Evaluate(func.arguments[0])}\n");
                     break;
-                case "run":
-                    Console.Write("Attempted to run\n");
+                case "run": // runs if a valid cartridge is inside. 
+                    if (nes == null) throw new Exception("A cartridge has not been loaded. Please use the load method, or use loadrun to do both at once.");
+                    form.RunROM();
                     break;
-                case "write":
-                    Console.Write($"Attempted to write {Evaluate(func.arguments[1])} to address {Evaluate(func.arguments[0])}\n");
+                case "loadrun": // loads and runs, not much to say here!
+                    form.LoadROMAndRun((string)Evaluate(func.arguments[0]));
+                    nes = form.nes;
                     break;
-                case "var":
+                case "write": // writes memory addresses, what do you want me to say?
+                    if (func.arguments.Count <= 1) throw new Exception("write method not given enough arguments!!");
+                    if (func.arguments[0] is StringLiteral s)
+                    {
+                        string source = (string)Evaluate(s);
+                        switch(source)
+                        {
+                            case "cpu":
+                                address = Convert.ToUInt16(Evaluate(func.arguments[1]));
+                                data = Convert.ToByte(Evaluate(func.arguments[2]));
+                                nes.cpuWrite(address, data);
+                                break;
+                            case "ppu":
+                                address = Convert.ToUInt16(Evaluate(func.arguments[1]));
+                                data = Convert.ToByte(Evaluate(func.arguments[2]));
+                                nes.ppu.ppuWrite(address, data);
+                                break;
+                        }
+                    } else if (func.arguments[0] is IdentifierExpression ie)
+                    {
+                        if (ie.path.Count == 0) throw new Exception("This file path specified has a length of zero. If you meant to access 'cpu' and 'ppu' memory, simply enter cpu or ppu as a string as this method's first argument.");
+                        ie.path[ie.path.Count - 1] = ie.path[ie.path.Count - 1] + "set";
+                        object action = Evaluate(ie);
+                        if (action is Action<object> a)
+                        {
+                            a(Evaluate(func.arguments[1]));
+                        } else
+                        {
+                            throw new Exception($"Action {ie.path[ie.path.Count - 1]} not found or invalid");
+                        }
+                    } else
+                    {
+                        throw new Exception($"Invalid type {func.arguments[0].GetType()} used.");
+                    }
+                    break;
+                case "cpuwrite":
+                    address = Convert.ToUInt16(Evaluate(func.arguments[0]));
+                    data = Convert.ToByte(Evaluate(func.arguments[1]));
+                    nes.cpuWrite(address, data);
+                    break;
+                case "ppuwrite":
+                    address = Convert.ToUInt16(Evaluate(func.arguments[0]));
+                    data = Convert.ToByte(Evaluate(func.arguments[1]));
+                    nes.ppu.ppuWrite(address, data);
+                    break;
+                case "var": // creates a variable
                     // (name, initialValue)
                     if (func.arguments.Count != 2) Console.Write("'var' function must contain 2 arguments");
                     if (func.arguments[0] is not StringLiteral) Console.Write("First argument of 'var' must be a string");
                     
                     variables.Add((string)Evaluate(func.arguments[0]), Evaluate(func.arguments[1]));
                     break;
-                case "set":
+                case "set": // sets a varible made using var()
                     if (func.arguments.Count != 2) Console.Write("'var' function must contain 2 arguments");
                     if (func.arguments[0] is not StringLiteral) Console.Write("First argument of 'var' must be a string");
                     if (!variables.ContainsKey((string)Evaluate(func.arguments[0]))) Console.Write($"Variable name does not exist");
 
                     string varName = (string)Evaluate(func.arguments[0]);
                     variables[varName] = Evaluate(func.arguments[1]);
-                    
-                    
-                    
                     break;
-                    
+                case "save": // saves the game to same folder as the .nes or at a specified file path
+                    if (nes == null) throw new Exception("NES does not exist");
+                    if (func.arguments.Count == 0)
+                    {
+                        form.SaveGame();
+                    } else
+                    {
+                        form.SaveGame((string)Evaluate(func.arguments[0]));
+                    }
+                    break;
+                case "wait": // waits for a specific number of millseconds
+                    Thread.Sleep((int)Evaluate(func.arguments[0]));
+                    break;
+                case "close": // closes the game instance, but does not remove the cartridge. 
+                    form.CloseROM();
+                    break;
+                case "exit": // exits out of the form completely
+                    form.Close();
+                    break;
+                case "read":
+                    // this has technically already been implemented at in the Evaluation func.
+                    break;
+                case "pause": // pauses the program (no more clock cycles!)
+                    form.paused = true;
+                    break;
+                case "play": // plays the program (more clock cycles!)
+                    form.paused = false;
+                    break;
+                case "step": // steps the program a certain amount of times (1 step = 1 ppu, 2 step = 1 cpu)
+                    if (func.arguments.Count >= 1)
+                    {
+                        int amt = (int)Evaluate(func.arguments[0]);
+                        for (int i = 0; i < amt; i++)
+                        {
+                            nes.clock();
+                        }
+                    } else
+                    {
+                        nes.clock();
+                    }
+
+                    break;
             }
         } else if (node is IfStatement i)
         {
             if (EvalCondition(i.condition)) // if the condition is true
             {
-                foreach (Statement statement in i.body)
+                foreach (ASTNode statement in i.body)
                 {
                     ProcessNode(statement);
                 }
@@ -348,7 +559,7 @@ public class Interpreter
         {
             while (EvalCondition(w.condition))
             {
-                foreach (Statement statement in w.body)
+                foreach (ASTNode statement in w.body)
                 {
                     ProcessNode(statement);
                 }

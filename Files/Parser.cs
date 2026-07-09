@@ -46,14 +46,21 @@ public class Parser
     public List<ASTNode> ParseTokens()
     {
         List<ASTNode> nodes = new List<ASTNode>();
-        ASTNode ParseIdentifier() // runs when the Current == "Identifier" (for now)
+        Expression ParseIdentifier(string? lexeme = null) // runs when the Current == "Identifier" (for now)
         {
             string name = Current.lexeme;
             int lineNum = Current.lineNum;
+            
+            if (lexeme != null)
+            {
+                // the identifier is already consumed in this scenario
+                name = lexeme;
+            } else
+            {
+                Advance(); // consume the identifier 
+            }
 
             
-
-            Advance(); // consume the identifier 
             if (Current.type == TokenType.LeftParen)
             {
                 List<Expression> args = new List<Expression>();
@@ -79,7 +86,7 @@ public class Parser
                 return new FunctionCall(name, args);
             } else // can't find it? Try to make it a variable at least!
             {           
-                return new IdentifierExpression(name);
+                return ParseIdentifierExpression(name);
             }
 
             
@@ -87,7 +94,29 @@ public class Parser
             
         }
 
-        
+        IdentifierExpression ParseIdentifierExpression(string value)
+        {
+            string name = value;
+            List<string> path = new List<string>();
+
+            // Advance(); // The identifier is already consumed prior, so no need for this line
+            while (Current.type == TokenType.Dot) // checks if there's a . for a path
+            {
+                Advance(); // consume the dot 
+                if (Current.type == TokenType.Identifier) // checks the identifier after the .
+                {
+                    // this is a valid path, so add it!
+                    path.Add(Current.lexeme);
+                    Advance(); // consume the identifier
+                } else
+                {
+                    // this is NOT a valid path
+                    throw new Exception($"Invalid type {Current.type} after '.' at {Current.lineNum} Identifier expected.");
+                }
+            }
+
+            return new IdentifierExpression(name, path);
+        }
         
         IfStatement ParseIfStatement()
         {
@@ -103,7 +132,7 @@ public class Parser
             if (Current.type != TokenType.RightParen) 
                 throw new Exception($"')' expected at line {Current.lineNum}");
 
-            List<Statement> body = ParseBody(); // handles { to }
+            List<ASTNode> body = ParseBody(); // handles { to }
 
             return new IfStatement(condition, body);
         }
@@ -122,7 +151,7 @@ public class Parser
             if (Current.type != TokenType.RightParen) 
                 throw new Exception($"')' expected at line {Current.lineNum}");
 
-            List<Statement> body = ParseBody(); // handles { to }
+            List<ASTNode> body = ParseBody(); // handles { to }
 
             return new WhileStatement(condition, body);
         }  
@@ -229,7 +258,7 @@ public class Parser
                     return new BoolLiteral(ParseBool(token.lexeme));
 
                 case TokenType.Identifier:
-                    return new IdentifierExpression(token.lexeme);
+                    return ParseIdentifier(token.lexeme);
 
                 
 
@@ -243,9 +272,9 @@ public class Parser
         {
             return ParseLogical();
         }
-        List<Statement> ParseBody() {
+        List<ASTNode> ParseBody() {
         
-            List<Statement> body = new List<Statement>();
+            List<ASTNode> body = new List<ASTNode>();
 
             Advance();
 
@@ -260,7 +289,7 @@ public class Parser
             while (Current.type != TokenType.RightCurly)
             {
                 ASTNode statement = ParseNode();
-                if (statement is Statement s)
+                if (statement is ASTNode s)
                 {
                     body.Add(s);
                 } else

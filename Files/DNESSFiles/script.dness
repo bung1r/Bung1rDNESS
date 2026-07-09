@@ -1,0 +1,56 @@
+# 
+script.dness - made by bung1r
+- a simple script which tests the bare minimum in order to see is the Domain Specific Language I wrote actually works.
+- this is where all the magic of development happens!
+#
+
+if (true) {
+    println("Hello World, although it sounds like bits and bytes...")
+}
+
+load("tests/donkeykong.nes")
+run()
+
+print("A: ")
+println(cpu.a)
+print("X: ")
+println(cpu.x)
+print("Y: ")
+println(cpu.y)
+
+wait(1000)
+
+pause()
+wait(2) 
+# Sometimes the pause doesn't happen quick enough, so this wait is here just in case
+Of course I will fix the wait issue soon enough #
+
+write(cpu.a, 0xFF)
+print("A: ") println(cpu.a)
+
+write(cpu.x, 0b11111111)
+print("X: ") println(cpu.x)
+
+write(cpu.y, 255)
+print("Y: ") println(cpu.y) 
+
+# 
+Note: write("cpu", 0xFFFF, 0xFF) works as well, but just use cpuwrite(0xFFFF, 0xFF)
+# 
+
+var("luckyaddress", cpuread(0x1000)) 
+print("Our lucky address number 4096 is equal to: ")
+println(luckyaddress)
+
+var("i", 0)
+while (i < 100) {
+    cpuwrite(i, i * 2)
+    print("Address ") print(i) print(": ") println(cpuread(i))
+    set("i", i + 1)
+}
+
+
+wait(5000)
+
+play()
+

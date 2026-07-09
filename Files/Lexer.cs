@@ -39,6 +39,7 @@ public class Lexer
 
 
         bool inString = false;
+        bool inComment = false;
         for (int i = 0; i < source.Length; i++)
         {
             char c = source[i];
@@ -140,11 +141,7 @@ public class Lexer
                             tempLexeme = "";
                         } else
                         {
-                            if (tempLexeme.Length > 0)
-                            {
-                                tokenList.Add(new Token(tempToken, tempLexeme, lineNum));
-                                tempLexeme = "";
-                            }
+                            ProcessLexeme();
                             // do something when the equal sign is the only thing. 
                             ConcatLex(c);
                         }
@@ -161,11 +158,7 @@ public class Lexer
                 case '>':
                     if (!inString)
                     {
-                        if (tempLexeme.Length > 0)
-                        {
-                            tokenList.Add(new Token(tempToken, tempLexeme, lineNum));
-                            tempLexeme = "";
-                        }
+                        ProcessLexeme();
 
                         if (source[i + 1] != '=')
                         {
@@ -184,11 +177,7 @@ public class Lexer
                 case '<':
                     if (!inString)
                     {
-                        if (tempLexeme.Length > 0)
-                        {
-                            tokenList.Add(new Token(tempToken, tempLexeme, lineNum));
-                            tempLexeme = "";
-                        }
+                        ProcessLexeme();
 
                         if (source[i + 1] != '=')
                         {
@@ -207,11 +196,7 @@ public class Lexer
                 case '!':
                     if (!inString)
                     {
-                        if (tempLexeme.Length > 0)
-                        {
-                            tokenList.Add(new Token(tempToken, tempLexeme, lineNum));
-                            tempLexeme = "";
-                        }
+                        ProcessLexeme();
 
                         if (source[i + 1] != '=')
                         {
@@ -300,12 +285,7 @@ public class Lexer
                             tempLexeme = "";
                         } else
                         {
-                            if (tempLexeme.Length > 0)
-                            {
-                                DetermineTokenType();
-                                tokenList.Add(new Token(tempToken, tempLexeme, lineNum));
-                                tempLexeme = "";
-                            }
+                            ProcessLexeme();
                             ConcatLex(c);
                         }
                     } else
@@ -344,7 +324,16 @@ public class Lexer
 
                     break;
 
-
+                case '.':
+                    if (!inString)
+                    {
+                        ProcessLexeme();
+                        tokenList.Add(new Token(TokenType.Dot, ".", lineNum));
+                    } else
+                    {
+                        ConcatLex(c);
+                    }
+                break;
                 case 'x': // this means that it's hexadecimal
                     if (tempLexeme == "0")
                     {
@@ -372,6 +361,24 @@ public class Lexer
 
                     
                     break;
+                
+                case'#': // this is the comment character
+                    if (tempLexeme == "")
+                    {
+                        Console.WriteLine(tempLexeme);
+                        inString = true; // this prevents most things. !
+                        tempLexeme = "#";
+                    } else if (tempLexeme.StartsWith('#'))
+                    {
+                        inString = false;
+                        tempLexeme = "";
+                    } else
+                    {
+                        Console.WriteLine(tempLexeme);
+                        throw new Exception($"Bro, why is there a random ahh hashtag at line {lineNum}");
+                    }
+                    break;
+
 
                 default:
                     ConcatLex(c);

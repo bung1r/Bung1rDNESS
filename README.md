@@ -17,24 +17,63 @@ other statements like while loops
 **July 6th 2026** <br>
 - Completed basic mathematical operations (+, -, /, and *) and made it compatable with variables (setting/creating) + if statements 
 - Completed implementation of a while loop
-- Completed system for variable creation and setting. 
+- Completed system for variable creation and setting
 - Modified some function calls
 - Goals for next time: Add simple implementation with Bung1rNESEmulator (ex: cpu.a, cpu.y, cpu.x), as well as working write(), read(), and load()
 
+**July 8th 2026** <br>
+- Added a decently large about of implementation with Bung1rNESEmulator, including the things stated as "Goals for next time"
+- Other methods that were added include step(), pause(), cpuwrite(), ppuwrite(), wait(), and quite a bit more.
+- Added the ability to comment using two hashtags surrounding any block of text
+- Made return-able functions
+- Goals for next time: Add more implementation with the PPU, APU, and other systems. Add more useful methods and fix timing issues (pause will pause at different clock counts because of the speed of the nes)
 ### Instruction Set:<br><br>
 
-load [ROM file path]<br>
+load([ROM_Path])<br>
 - Loads a certain cartridge into the emulator.<br><br>
 
-unload<br>
+run() <br>
+- Runs the game. load() must be used in order to load the cartridge. Not the same as play() <br><br>
+
+loadrun([ROM_Path])<br>
+- Loads, then runs a certain cartridge into the emulator. Just the load and run methods in a single line<br><br>
+
+
+pause() <br>
+- Pauses the game <br><br>
+
+play() <br>
+- Unpauses the game <br><br>
+
+unload() <br>
 - Unloads an existing cartridge from the emulator.<br><br>
 
-write [address] [data]<br>
-- Writes a byte to a certain memory address.<br><br>
+close() <br>
+- Closes out of the game instance, but does not take the cartridge out.<br><br>
+
+exit() <br>
+- Exits completely out of the Windows Form display menu
+
+write([cpu/ppu] [address] [data]) OR write [cpu._/ppu._]<br>
+- Writes a byte to a certain memory address or register as specified <br><br>
+
+cpuwrite([addr] [data])
+- Write a byte to a certain memory address as if it was written from the CPU. 
+
+ppuwrite([addr] [data])
+- Write a byte to a certain memory address as if it was written from the PPU. 
+
+step([x])
+- Steps forward x amount of clock cycles. In this emulator, 1 step = 1 ppu clock, 2 step = 1 cpu clock
 
 read [address]<br>
-- Reads a byte from a certain memory address<br>
-- If an address range or a list of addresses is given, the return value will be the value of those addresses in the order specified. <br><br>
+- Reads a byte from a certain memory address<br><br>
+
+cpuread [address] [bRead]
+- Reads a byte from a certain memory address as sif it was read from the CPU.
+
+ppuread [address] [bRead]
+- Reads a byte from a certain memory address as sif it was read from the PPU.
 
 dump [file_path]<br>
 - Dumps a bunch of info into a specified file path. Idk what this will do yet. Will create a new file if the file does not exist.  <br><br>

@@ -1,4 +1,8 @@
-﻿public class Program
+﻿
+
+using System.Windows.Forms;
+
+public class Program
 {
     static void DisplayParser(List<ASTNode> astNodes)
     {
@@ -38,34 +42,9 @@
         List<Token> tokenList;
         List<ASTNode> astNodes;
 
-        Lexer lexer = new Lexer(
-            
-            
-            """
-            if(true) {
-                println("Hello World, although it sounds like bits and bytes...")
-            }
-            
-            load("nestest.nes")
+        string source = File.ReadAllText("./Files/DNESSFiles/script.dness");
 
-            var("x", 0)
-            while (x < 5) {
-                set("x", x + 1)
-                print("X is currently: ")
-                println(x)
-            }
-
-            var("num", 2 + 2 * 2)
-            if (num == (6)) {
-                println(num)
-            }           
-
-           
-
-            """
-            
-
-        );
+        Lexer lexer = new Lexer(source);
 
         
         tokenList = lexer.ScanTokens();
@@ -77,12 +56,13 @@
 
         // DisplayParser(astNodes);
 
-        Interpreter interpreter = new Interpreter(astNodes);
+        MainForm form = new MainForm();
+        
+        Interpreter interpreter = new Interpreter(astNodes, form);
+
+        Thread formThread = new Thread(() => Application.Run(form));
+        formThread.Start();
+        
         interpreter.Execute();
-
-        
-       
-        
-
     }
 }

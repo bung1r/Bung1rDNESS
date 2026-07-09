@@ -17,6 +17,7 @@ public class Token
 public enum TokenType
 {
     Identifier,
+    Dot,
     If, 
     While,
     GE,
