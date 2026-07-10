@@ -27,6 +27,14 @@ other statements like while loops
 - Added the ability to comment using two hashtags surrounding any block of text
 - Made return-able functions
 - Goals for next time: Add more implementation with the PPU, APU, and other systems. Add more useful methods and fix timing issues (pause will pause at different clock counts because of the speed of the nes)
+
+**July 10th 2026** <br>
+- Added a couple more methods.
+- Made an input recording system (TAS)
+- Added a file that beats 1-1 using my inputs (mario1-1.dness).
+- Edited script.dness to be more representative of the functions this language can perform.
+- Goals for next time: To be determined. This project is practically finished, and so I will retire it until I decide to work on it again.
+  
 ### Instruction Set:<br><br>
 
 load([ROM_Path])<br>
