@@ -2,7 +2,7 @@
 ## made by Bung1r
 DNESS stands for Debugging NES (Nintentdo Entertainment System) Script 
 
-This is a domain-specific language written in C# which works with bung1r's specific NES Emulator, boasting capabilities such as debugging and automating NES tasks. 
+This is a domain-specific language written in C# which works with bung1r's specific NES Emulator, with a built in Lexer, Parser, and Interpreter, as well as boasting capabilities such as debugging and automating NES tasks with the use of 30+ commands. 
 
 ### PROGRESS REPORT: 
 
