@@ -1,56 +1,74 @@
-# 
-script.dness - made by bung1r
-- a simple script which tests the bare minimum in order to see is the Domain Specific Language I wrote actually works.
-- this is where all the magic of development happens!
-#
+# This file demonstrates a couple of the core features of this Domain Specific Language.  #
 
-if (true) {
-    println("Hello World, although it sounds like bits and bytes...")
+println("Hello World")
+
+if (1 == 1) {
+    println("Although it sounds like bits and bytes!")
+
+    if (0xFF == 0b1111 1111) {
+        println("My circuitry is filled with mites...")
+    }
 }
 
-load("tests/donkeykong.nes")
-run()
+var("i", 0)
+while (i < 10){
+    print(i) print(" ")
+    set("i", i + 1)
+}
+println("")
 
-print("A: ")
-println(cpu.a)
-print("X: ")
-println(cpu.x)
-print("Y: ")
-println(cpu.y)
+load("tests/supermariobros.nes")
+run()
 
 wait(1000)
 
 pause()
-wait(2) 
-# Sometimes the pause doesn't happen quick enough, so this wait is here just in case
-Of course I will fix the wait issue soon enough #
+
+wait(5) # Wait a little after a pause (If you don't do this, Out of Bounds errors might occur due to clock cycle overlap) #
+
+print("Clock Counter: ") println(nes.clockcounter) # This number will be ~4,000,000-6,000,000 because of the randomness in speed that can happen in a second #
+
+stepuntil(20 000 000) # Step until clock counter is equal to 20,000,000. #
+
+print("Clock Counter: ") println(nes.clockcounter) # Since we step while paused, this number will always be 20,000,000 #
+
+var("a", cpu.a)
+var("x", cpu.x)
+var("y", cpu.y)
 
 write(cpu.a, 0xFF)
+write(cpu.x, 255)
+write(cpu.y, 0b1111 1111)
+
 print("A: ") println(cpu.a)
-
-write(cpu.x, 0b11111111)
 print("X: ") println(cpu.x)
+print("Y: ") println(cpu.y)
 
-write(cpu.y, 255)
-print("Y: ") println(cpu.y) 
+write(cpu.a, a)
+write(cpu.x, x)
+write(cpu.y, y)
 
-# 
-Note: write("cpu", 0xFFFF, 0xFF) works as well, but just use cpuwrite(0xFFFF, 0xFF)
-# 
+print("A: ") println(cpu.a)
+print("X: ") println(cpu.x)
+print("Y: ") println(cpu.y)
 
-var("luckyaddress", cpuread(0x1000)) 
-print("Our lucky address number 4096 is equal to: ")
-println(luckyaddress)
+wait(1000)
 
-var("i", 0)
-while (i < 100) {
-    cpuwrite(i, i * 2)
-    print("Address ") print(i) print(": ") println(cpuread(i))
-    set("i", i + 1)
-}
+play()
+record(true)
+
+
+println("Try doing some inputs! It will create a file called log.txt, which will provide all the commands for replaying those inputs.")
+
 
 
 wait(5000)
 
-play()
+record(false)
+println("Times Up! Inputs are being recording anymore. Thank you!")
+
+wait(2000)
+
+exit()
+
 

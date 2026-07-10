@@ -1,6 +1,8 @@
 using System.Collections;
+using System.ComponentModel;
 using System.Diagnostics.Tracing;
 using System.Net.NetworkInformation;
+using System.Windows.Forms;
 using System.Xml;
 
 public class Interpreter
@@ -13,6 +15,7 @@ public class Interpreter
     Dictionary<string, object> cpuValues = new Dictionary<string, object>();
     Dictionary<string, object> ppuValues = new Dictionary<string, object>();
     Dictionary<string, object> apuValues = new Dictionary<string, object>();
+    Dictionary<string, object> nesValues = new Dictionary<string, object>();
     Dictionary<string, object> formValues = new Dictionary<string, object>();
     public Interpreter(List<ASTNode> nodes, MainForm form) 
     {
@@ -45,7 +48,18 @@ public class Interpreter
 
         apuValues = new()
         {
-            
+            ["p1"] = Wrap(() => nes.apu.p1),
+            ["p2"] = Wrap(() => nes.apu.p2),
+            ["t"] = Wrap(() => nes.apu.t),
+            ["n"] = Wrap(() => nes.apu.n),
+            ["d"] = Wrap(() => nes.apu.d), 
+        };
+
+        nesValues = new()
+        {
+            ["clockcounter"] = Wrap(() => nes.clockCounter),
+
+            ["clockcounterset"] = WrapSetter<int>(value => throw new Exception("clockcounter cannot be set.")),
         };
     }
     private Func<object> Wrap<T>(Func<T> func)
@@ -182,6 +196,9 @@ public class Interpreter
                     break;
                     case "form":
                     values = formValues;
+                    break;
+                    case "nes":
+                    values = nesValues;
                     break;
                 }
                 if (nes == null) throw new Exception($"A ROM must be loaded before being able to access {ex.value}");
@@ -397,7 +414,7 @@ public class Interpreter
                                 return leftVal == rightVal;
                             case TokenType.NEQ:
                                 // Console.WriteLine($"{leftVal}, {rightVal}");
-                                return left != right;
+                                return leftVal != rightVal;
                         }
                     }
 
@@ -425,6 +442,7 @@ public class Interpreter
                     Console.Write($"{Evaluate(func.arguments[0])}");
                     break;
                 case "println":
+                    
                     Console.Write($"{Evaluate(func.arguments[0])}\n");
                     break;
                 case "load":
@@ -516,6 +534,20 @@ public class Interpreter
                 case "wait": // waits for a specific number of millseconds
                     Thread.Sleep((int)Evaluate(func.arguments[0]));
                     break;
+                case "waituntil": // waits until the clockcounter is a certain amount
+                    int waitGoal = (int)Evaluate(func.arguments[0]);
+                    while(nes.clockCounter < waitGoal)
+                    {
+                        Thread.SpinWait(100);
+                    }
+                    break;
+                case "waitsteps": // waits a certain number of steps
+                    int waitStepGoal = (int)Evaluate(func.arguments[0]) + nes.clockCounter;
+                    while (nes.clockCounter < waitStepGoal)
+                    {
+                        Thread.SpinWait(100);
+                    }
+                    break;
                 case "close": // closes the game instance, but does not remove the cartridge. 
                     form.CloseROM();
                     break;
@@ -545,6 +577,79 @@ public class Interpreter
                     }
 
                     break;
+                case "stepuntil":
+                    int stepAmt =(int)Evaluate(func.arguments[0]) - nes.clockCounter;
+                    
+                    for (int i = 0; i < stepAmt; i++)
+                    {
+                        nes.clock();
+                    }
+                    break;
+                case "stepuntilasync":
+                    new Thread(() => {
+                        int stepAmt =(int)Evaluate(func.arguments[0]) - nes.clockCounter;
+                        
+                        for (int i = 0; i < stepAmt; i++)
+                        {
+                            nes.clock();
+                        }
+
+                        form.paused = false;
+                    }).Start();
+                    break;
+                case "press": // press + release
+                    // press("A", 5, "steps", true)
+                    void PressKeyFunc()
+                    {
+                        string mode = (string)Evaluate(func.arguments[2]);
+                        Keys key = DetermineKey((string)Evaluate(func.arguments[0]));
+                        int duration = (int)Evaluate(func.arguments[1]);
+                        form.InputKeyDownLogic(key);
+                        if (mode == "step" || mode == "steps") {
+                            int goal = nes.clockCounter + duration;
+                            while (nes.clockCounter < goal) {Thread.SpinWait(100);}
+                        } else
+                        {
+                            // else then just assume seconds. 
+                            Thread.Sleep(duration);
+                        }
+                        form.InputKeyUpLogic(key);
+                    }
+
+                    if (func.arguments.Count == 4 && (bool)Evaluate(func.arguments[3]) == true)
+                    {
+                       Thread e = new Thread(() => PressKeyFunc());
+                       e.Start();
+
+                    } else
+                    {
+                       PressKeyFunc();
+                    }
+                break;
+
+                case "hold": // press but no relase
+                    int holdtemp = nes.clockCounter;
+                    Keys holdkey = DetermineKey((string)Evaluate(func.arguments[0]));
+                    int whenhold = (int)Evaluate(func.arguments[1]);
+                    int holdoffset = 1000;
+                    while (nes.clockCounter + holdoffset < whenhold) { Thread.SpinWait(100);}
+                    form.InputKeyDownLogic(holdkey);
+                    break;
+
+                case "release": // release if 
+                    int releasetemp = nes.clockCounter;
+                    Keys releasekey = DetermineKey((string)Evaluate(func.arguments[0]));
+                    int whenrelease = (int)Evaluate(func.arguments[1]);
+                    int releaseoffset = 1000;
+                    while (nes.clockCounter + releaseoffset < whenrelease) { Thread.SpinWait(100);}
+                    form.InputKeyUpLogic(releasekey);
+                    break;
+
+                case "record":
+                    form.recordInputs = (bool)Evaluate(func.arguments[0]);
+                    break;
+
+                    
             }
         } else if (node is IfStatement i)
         {
@@ -573,4 +678,31 @@ public class Interpreter
             ProcessNode(node);
         }
     }
+    Keys DetermineKey(string keystring)
+    {
+        switch(keystring)
+        {
+            case "X": return Keys.X; 
+            case "Z": return Keys.Z; 
+            case "N": return Keys.N; 
+            case "M": return Keys.M; 
+
+            case "W": 
+            case "up": return Keys.W; 
+
+            case "S": 
+            case "down": return Keys.S;
+
+            case "A":
+            case "left": return Keys.A; 
+
+            case "D": 
+            case "right": return Keys.D;
+
+            default:
+            throw new Exception("key was invalid!");
+        }
+    }
+    
 }
+

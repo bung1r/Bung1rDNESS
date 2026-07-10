@@ -52,34 +52,58 @@ close() <br>
 - Closes out of the game instance, but does not take the cartridge out.<br><br>
 
 exit() <br>
-- Exits completely out of the Windows Form display menu
+- Exits completely out of the Windows Form display menu<br><br>
 
 write([cpu/ppu] [address] [data]) OR write [cpu._/ppu._]<br>
 - Writes a byte to a certain memory address or register as specified <br><br>
 
 cpuwrite([addr] [data])
-- Write a byte to a certain memory address as if it was written from the CPU. 
+- Write a byte to a certain memory address as if it was written from the CPU. <br><br>
 
 ppuwrite([addr] [data])
-- Write a byte to a certain memory address as if it was written from the PPU. 
+- Write a byte to a certain memory address as if it was written from the PPU. <br><br>
 
 step([x])
-- Steps forward x amount of clock cycles. In this emulator, 1 step = 1 ppu clock, 2 step = 1 cpu clock
+- Steps forward x amount of clock cycles. In this emulator, 1 step = 1 ppu clock, 2 step = 1 cpu clock<br><br>
+
+stepuntil([goal]) <br>
+- Steps until the Clock Counter is equal to goal <br><br>
+
+stepuntilasync([goal]) <br>
+- Same as above, but just async
 
 read [address]<br>
 - Reads a byte from a certain memory address<br><br>
 
 cpuread [address] [bRead]
-- Reads a byte from a certain memory address as sif it was read from the CPU.
+- Reads a byte from a certain memory address as sif it was read from the CPU.<br><br>
 
-ppuread [address] [bRead]
-- Reads a byte from a certain memory address as sif it was read from the PPU.
+ppuread [address] [bRead] <br>
+- Reads a byte from a certain memory address as sif it was read from the PPU.<br><br>
 
-dump [file_path]<br>
-- Dumps a bunch of info into a specified file path. Idk what this will do yet. Will create a new file if the file does not exist.  <br><br>
+write([location], [data]) <br>
+- Writes a byte to a certain location
+- Valid 'locations' include: cpu.a, cpu.x, cpu.y, etc.
+- For writes to CPU or PPU memory, use cpuwrite or ppuwrite.<br><br>
+
+cpuwrite([address], [data]) <br>
+- Writes a byte to a certain address as if writing from the CPU.<br><br>
+
+ppuwrite([address], [data]) <br>
+- Writes a byte to a certain address as if writing from the PPU.<br><br>
 
 press([button], [duration_ms])<br>
 - Will press a button for a specified duration (in milliseconds). <br><br>
+
+hold([button], [holdtime]) <br>
+- Holds a button down, starting at 'holdtime' clock counter.
+
+release([button], [releasetime]) <br>
+- Releases a button, starting at 'releasetime' clock counter.<br><br>
+
+record([true/false]) <br>
+- Records input in a log.txt file, which can be copy and pasted. 
+- Writes a combination of only 'hold' and 'release' methods. <br><br>
 
 save([file_path])<br>
 - Saves the game progress to the file path specified. Will create a new file if the file does not exist.<br><br>
@@ -87,14 +111,21 @@ save([file_path])<br>
 wait([ms])<br>
 - Delays the current thread for a specified amount of time (in milliseconds)<br><br>
 
-speed([speed_mult]) <br>
-- Sets the game speed to a certain value <br><br>
+wait([waitsteps]) <br>
+- Delays the current thread for a specified amount of steps
+- Not 100% accurate, since it utilizes polling (but accurate enough)
+- If 100% accuracy is required, pause and use step([numsteps]) instead. <br><br>
+
+waituntil([goal])
+- Delays the current thread until clock counter/total num of steps = goal
+- Utilizes polling. 
+- If 100% accuracy is required, pause and use stepuntil([goal]) instead. <br><br>
 
 var([var_name], [initial_value]) <br>
 - Creates a new variable set to a specific value. <br><br>
 
 set([var_name], [new_value]) <br>
-- Sets a specific variable to a certain value. <br>
+- Sets a specific variable to a certain value. 
 This value does not have to match the initial data type of the variable.<br><br>
 
 print([content]) <br>
@@ -103,6 +134,7 @@ print([content]) <br>
 println([content]) <br>
 - Prints a line to the terminal with appending a newline character.<br><br>
 
+Note: There's a chance I missed some, but here are all the important ones at least. 
 
 
 
